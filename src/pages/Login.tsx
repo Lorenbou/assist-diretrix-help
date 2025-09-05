@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { storage } from '@/lib/storage';
 import { AlertCircle, Shield } from 'lucide-react';
 import diretrixLogo from '@/assets/diretrix-logo.jpg';
 
@@ -31,12 +32,18 @@ const Login = () => {
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao Sistema Diretrix",
       });
-      navigate('/dashboard');
+      // Navigate based on user role
+      const currentUser = storage.getCurrentUser();
+      if (currentUser?.role === 'admin') {
+        navigate('/dashboard');
+      } else {
+        navigate('/cliente-dashboard');
+      }
     } else {
       toast({
         variant: "destructive",
         title: "Erro no login",
-        description: "Usuário ou senha incorretos. Tente admin/admin123",
+        description: "Usuário ou senha incorretos. Verifique as credenciais de teste acima.",
       });
     }
     
@@ -96,9 +103,21 @@ const Login = () => {
                 <div className="flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-muted-foreground">
-                    <p className="font-medium">Credenciais de teste:</p>
-                    <p>Usuário: <code className="font-mono bg-background px-1 rounded">admin</code></p>
-                    <p>Senha: <code className="font-mono bg-background px-1 rounded">admin123</code></p>
+                    <p className="font-medium mb-2">Credenciais de teste:</p>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <p className="font-medium text-primary">👨‍💼 Funcionários (Ver todos os chamados):</p>
+                        <p>• admin / admin123</p>
+                        <p>• funcionario / func123</p>
+                      </div>
+                      
+                      <div>
+                        <p className="font-medium text-type-doubt">👤 Clientes (Apenas criar chamados):</p>
+                        <p>• cliente1 / client123</p>
+                        <p>• cliente2 / client123</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

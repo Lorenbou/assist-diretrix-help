@@ -5,8 +5,10 @@ const AUTH_KEY = 'diretrix-auth';
 
 // Mock authentication
 export const AUTH_CREDENTIALS = {
-  username: 'admin',
-  password: 'admin123'
+  admin: { username: 'admin', password: 'admin123', role: 'admin', name: 'Administrador' },
+  funcionario: { username: 'funcionario', password: 'func123', role: 'admin', name: 'João Silva - Suporte' },
+  cliente1: { username: 'cliente1', password: 'client123', role: 'client', name: 'Maria Santos' },
+  cliente2: { username: 'cliente2', password: 'client123', role: 'client', name: 'Carlos Lima' },
 };
 
 // Storage utilities
@@ -56,15 +58,28 @@ export const storage = {
 
   // Auth utilities
   isAuthenticated: (): boolean => {
-    return localStorage.getItem(AUTH_KEY) === 'true';
+    return localStorage.getItem(AUTH_KEY) !== null;
   },
 
-  login: (username: string, password: string): boolean => {
-    if (username === AUTH_CREDENTIALS.username && password === AUTH_CREDENTIALS.password) {
-      localStorage.setItem(AUTH_KEY, 'true');
-      return true;
+  getCurrentUser: (): { username: string; role: 'admin' | 'client'; name: string } | null => {
+    const userData = localStorage.getItem(AUTH_KEY);
+    return userData ? JSON.parse(userData) : null;
+  },
+
+  login: (username: string, password: string): { success: boolean; user?: any } => {
+    const user = Object.values(AUTH_CREDENTIALS).find(
+      cred => cred.username === username && cred.password === password
+    );
+    
+    if (user) {
+      localStorage.setItem(AUTH_KEY, JSON.stringify({
+        username: user.username,
+        role: user.role,
+        name: user.name
+      }));
+      return { success: true, user };
     }
-    return false;
+    return { success: false };
   },
 
   logout: (): void => {

@@ -5,8 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import ClientDashboard from "./pages/ClientDashboard";
 import CreateTicket from "./pages/CreateTicket";
 import TicketDetails from "./pages/TicketDetails";
 import NotFound from "./pages/NotFound";
@@ -25,8 +27,16 @@ const App = () => (
             <Route 
               path="/dashboard" 
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <Dashboard />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/cliente-dashboard" 
+              element={
+                <ProtectedRoute>
+                  <ClientDashboard />
                 </ProtectedRoute>
               } 
             />
@@ -41,12 +51,12 @@ const App = () => (
             <Route 
               path="/chamado/:id" 
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <TicketDetails />
-                </ProtectedRoute>
+                </AdminRoute>
               } 
             />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

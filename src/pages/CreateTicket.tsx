@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,11 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { storage } from '@/lib/storage';
 import { TicketType } from '@/types/ticket';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 import { ArrowLeft, Send, Bug, HelpCircle } from 'lucide-react';
 
 const CreateTicket = () => {
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
-    username: '',
+    username: user?.name || '',
     type: '' as TicketType | '',
     title: '',
     description: ''
@@ -21,6 +24,21 @@ const CreateTicket = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Pre-fill form based on URL parameters and user info
+    const tipo = searchParams.get('tipo');
+    if (tipo === 'duvida') {
+      setFormData(prev => ({ ...prev, type: 'Dúvida' }));
+    } else if (tipo === 'bug') {
+      setFormData(prev => ({ ...prev, type: 'Bug' }));
+    }
+    
+    // Always use current user's name
+    if (user?.name) {
+      setFormData(prev => ({ ...prev, username: user.name }));
+    }
+  }, [searchParams, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +70,12 @@ const CreateTicket = () => {
         description: `Chamado #${ticket.id} foi registrado no sistema`,
       });
 
-      navigate('/dashboard');
+      // Navigate based on user role
+      if (user?.role === 'admin') {
+        navigate('/dashboard');
+      } else {
+        navigate('/cliente-dashboard');
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -68,6 +91,14 @@ const CreateTicket = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleBack = () => {
+    if (user?.role === 'admin') {
+      navigate('/dashboard');
+    } else {
+      navigate('/cliente-dashboard');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -76,7 +107,7 @@ const CreateTicket = () => {
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
-              onClick={() => navigate('/dashboard')}
+              onClick={handleBack}
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -111,7 +142,13 @@ const CreateTicket = () => {
                     onChange={(e) => handleInputChange('username', e.target.value)}
                     required
                     className="h-11"
+                    disabled={user?.role === 'client'} // Clients can't change their name
                   />
+                  {user?.role === 'client' && (
+                    <p className="text-sm text-muted-foreground">
+                      Este campo é preenchido automaticamente com seu nome de usuário.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -174,7 +211,7 @@ const CreateTicket = () => {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={handleBack}
                     className="flex-1"
                   >
                     Cancelar
