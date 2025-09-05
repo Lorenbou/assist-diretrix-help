@@ -52,6 +52,15 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				status: {
+					open: 'hsl(var(--status-open))',
+					progress: 'hsl(var(--status-progress))',
+					completed: 'hsl(var(--status-completed))'
+				},
+				type: {
+					bug: 'hsl(var(--type-bug))',
+					doubt: 'hsl(var(--type-doubt))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
