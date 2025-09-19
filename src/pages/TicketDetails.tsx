@@ -5,8 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { storage } from '@/lib/storage';
-import { Ticket, TicketStatus } from '@/types/ticket';
+import { ticketService } from '@/lib/tickets';
+import { Ticket } from '@/types/ticket';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Calendar, User, Tag, AlertTriangle, Clock, CheckCircle, AlertCircle, Bug, HelpCircle } from 'lucide-react';
 
@@ -19,36 +19,45 @@ const TicketDetails = () => {
 
   useEffect(() => {
     if (id) {
-      const foundTicket = storage.getTicketById(id);
-      if (foundTicket) {
-        setTicket(foundTicket);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Chamado não encontrado",
-          description: "O chamado solicitado não existe ou foi removido",
-        });
-        navigate('/dashboard');
-      }
+      const loadTicket = async () => {
+        try {
+          const foundTicket = await ticketService.getTicketById(id);
+          if (foundTicket) {
+            setTicket(foundTicket);
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Chamado não encontrado",
+              description: "O chamado solicitado não existe ou foi removido",
+            });
+            navigate('/dashboard');
+          }
+        } catch (error) {
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar chamado",
+            description: "Não foi possível carregar o chamado",
+          });
+          navigate('/dashboard');
+        }
+      };
+      loadTicket();
     }
   }, [id, navigate, toast]);
 
-  const handleStatusUpdate = async (newStatus: TicketStatus) => {
+  const handleStatusUpdate = async (newStatus: string) => {
     if (!ticket) return;
 
     setIsUpdating(true);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      const updatedTicket = storage.updateTicketStatus(ticket.id, newStatus);
+      const updatedTicket = await ticketService.updateTicket(ticket.id, { status: newStatus });
       
       if (updatedTicket) {
         setTicket(updatedTicket);
         toast({
           title: "Status atualizado!",
-          description: `Chamado marcado como "${newStatus}"`,
+          description: `Chamado marcado como "${getStatusLabel(newStatus)}"`,
         });
       }
     } catch (error) {
@@ -73,28 +82,43 @@ const TicketDetails = () => {
     );
   }
 
-  const getStatusIcon = (status: TicketStatus) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Aberto': return <AlertCircle className="h-4 w-4" />;
-      case 'Em andamento': return <Clock className="h-4 w-4" />;
-      case 'Concluído': return <CheckCircle className="h-4 w-4" />;
+      case 'open': return <AlertCircle className="h-4 w-4" />;
+      case 'in_progress': return <Clock className="h-4 w-4" />;
+      case 'closed': return <CheckCircle className="h-4 w-4" />;
+      default: return <AlertCircle className="h-4 w-4" />;
     }
   };
 
-  const getStatusColor = (status: TicketStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Aberto': return 'bg-status-open text-white';
-      case 'Em andamento': return 'bg-status-progress text-white';
-      case 'Concluído': return 'bg-status-completed text-white';
+      case 'open': return 'bg-status-open text-white';
+      case 'in_progress': return 'bg-status-progress text-white';
+      case 'closed': return 'bg-status-completed text-white';
+      default: return 'bg-status-open text-white';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'open': return 'Aberto';
+      case 'in_progress': return 'Em andamento';
+      case 'closed': return 'Concluído';
+      default: return status;
     }
   };
 
   const getTypeIcon = (type: string) => {
-    return type === 'Bug' ? <Bug className="h-4 w-4" /> : <HelpCircle className="h-4 w-4" />;
+    return type === 'bug' ? <Bug className="h-4 w-4" /> : <HelpCircle className="h-4 w-4" />;
   };
 
   const getTypeColor = (type: string) => {
-    return type === 'Bug' ? 'bg-type-bug text-white' : 'bg-type-doubt text-white';
+    return type === 'bug' ? 'bg-type-bug text-white' : 'bg-type-doubt text-white';
+  };
+
+  const getTypeLabel = (type: string) => {
+    return type === 'bug' ? 'Bug' : 'Dúvida';
   };
 
   const formatDate = (dateString: string) => {
@@ -109,11 +133,11 @@ const TicketDetails = () => {
   };
 
   const getAvailableStatusOptions = () => {
-    const options: TicketStatus[] = [];
+    const options: string[] = [];
     
-    if (ticket.status !== 'Aberto') options.push('Aberto');
-    if (ticket.status !== 'Em andamento') options.push('Em andamento');
-    if (ticket.status !== 'Concluído') options.push('Concluído');
+    if (ticket.status !== 'open') options.push('open');
+    if (ticket.status !== 'in_progress') options.push('in_progress');
+    if (ticket.status !== 'closed') options.push('closed');
     
     return options;
   };
@@ -158,7 +182,7 @@ const TicketDetails = () => {
                   <p className="text-sm font-medium text-muted-foreground mb-1">Status Atual</p>
                   <Badge className={`gap-2 text-sm ${getStatusColor(ticket.status)}`}>
                     {getStatusIcon(ticket.status)}
-                    {ticket.status}
+                    {getStatusLabel(ticket.status)}
                   </Badge>
                 </div>
                 <div className="flex-1">
@@ -176,7 +200,7 @@ const TicketDetails = () => {
                         <SelectItem key={status} value={status}>
                           <div className="flex items-center gap-2">
                             {getStatusIcon(status)}
-                            {status}
+                            {getStatusLabel(status)}
                           </div>
                         </SelectItem>
                       ))}
@@ -195,11 +219,11 @@ const TicketDetails = () => {
                   <div className="flex items-center gap-3 mb-3">
                     <Badge className={`gap-1 ${getTypeColor(ticket.type)}`}>
                       {getTypeIcon(ticket.type)}
-                      {ticket.type}
+                      {getTypeLabel(ticket.type)}
                     </Badge>
                     <Badge className={`gap-1 ${getStatusColor(ticket.status)}`}>
                       {getStatusIcon(ticket.status)}
-                      {ticket.status}
+                      {getStatusLabel(ticket.status)}
                     </Badge>
                   </div>
                   <CardTitle className="text-2xl mb-2">{ticket.title}</CardTitle>
@@ -213,14 +237,14 @@ const TicketDetails = () => {
                   <User className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Usuário</p>
-                    <p className="font-semibold">{ticket.username}</p>
+                    <p className="font-semibold">{ticket.created_by_user?.name || 'Usuário'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Criado em</p>
-                    <p className="font-semibold text-sm">{formatDate(ticket.createdAt)}</p>
+                    <p className="font-semibold text-sm">{formatDate(ticket.created_at)}</p>
                   </div>
                 </div>
               </div>
@@ -244,16 +268,16 @@ const TicketDetails = () => {
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span>Criado: {formatDate(ticket.createdAt)}</span>
+                    <span>Criado: {formatDate(ticket.created_at)}</span>
                   </div>
                 </div>
-                {ticket.status !== 'Aberto' && (
+                {ticket.status !== 'open' && (
                   <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${
-                        ticket.status === 'Em andamento' ? 'bg-status-progress' : 'bg-status-completed'
+                        ticket.status === 'in_progress' ? 'bg-status-progress' : 'bg-status-completed'
                       }`}></div>
-                      <span>Status atual: {ticket.status}</span>
+                      <span>Status atual: {getStatusLabel(ticket.status)}</span>
                     </div>
                   </div>
                 )}

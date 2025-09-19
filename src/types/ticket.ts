@@ -66,7 +66,3 @@ export interface TicketActivity {
     email: string;
   };
 }
-
-// Legacy types for backward compatibility
-export type TicketType = 'Dúvida' | 'Bug';
-export type TicketStatus = 'Aberto' | 'Em andamento' | 'Concluído';
