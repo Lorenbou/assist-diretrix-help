@@ -1,15 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Plus, LogOut, MessageSquare, Clock, CheckCircle2, User } from 'lucide-react';
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const { signOut, user } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate('/login');
   };
 
@@ -26,7 +26,7 @@ const ClientDashboard = () => {
       icon: <MessageSquare className="h-8 w-8 text-type-doubt" />,
       title: 'Dúvidas',
       description: 'Tire suas dúvidas sobre o uso do sistema',
-      action: () => navigate('/criar-chamado?tipo=duvida'),
+      action: () => navigate('/criar-chamado?tipo=question'),
       buttonText: 'Fazer Pergunta',
       color: 'bg-type-doubt/10 border-type-doubt/20'
     },

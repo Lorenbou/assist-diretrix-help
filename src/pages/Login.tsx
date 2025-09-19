@@ -1,50 +1,79 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useAuth } from '@/context/AuthContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { storage } from '@/lib/storage';
 import { AlertCircle, Shield } from 'lucide-react';
 import diretrixLogo from '@/assets/diretrix-logo.jpg';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [role, setRole] = useState<'admin' | 'client'>('client');
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { signIn, signUp, user, loading } = useAuth();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Redirect if already logged in
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
+  }
+
+  if (user) {
+    if (user.role === 'admin') {
+      return <Navigate to="/dashboard" replace />;
+    } else {
+      return <Navigate to="/cliente-dashboard" replace />;
+    }
+  }
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const success = login(username, password);
+    const { error } = await signIn(email, password);
     
-    if (success) {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro no login",
+        description: error,
+      });
+    } else {
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao Sistema Diretrix",
       });
-      // Navigate based on user role
-      const currentUser = storage.getCurrentUser();
-      if (currentUser?.role === 'admin') {
-        navigate('/dashboard');
-      } else {
-        navigate('/cliente-dashboard');
-      }
-    } else {
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const { error } = await signUp(name, email, password, role);
+    
+    if (error) {
       toast({
         variant: "destructive",
-        title: "Erro no login",
-        description: "Usuário ou senha incorretos. Verifique as credenciais de teste acima.",
+        title: "Erro no cadastro",
+        description: error,
       });
+    } else {
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Verifique seu email para confirmar sua conta.",
+      });
+      setActiveTab('login');
     }
     
     setIsLoading(false);
@@ -67,69 +96,127 @@ const Login = () => {
 
         <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur">
           <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl text-center">Fazer Login</CardTitle>
+            <CardTitle className="text-2xl text-center">Acesso ao Sistema</CardTitle>
             <CardDescription className="text-center">
-              Entre com suas credenciais para acessar o sistema
+              Entre com sua conta ou crie uma nova
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Usuário</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="Digite seu usuário"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Digite sua senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              </TabsList>
               
-              <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-muted-foreground">
-                    <p className="font-medium mb-2">Credenciais de teste:</p>
-                    
-                    <div className="space-y-2">
-                      <div>
-                        <p className="font-medium text-primary">👨‍💼 Funcionários (Ver todos os chamados):</p>
-                        <p>• admin / admin123</p>
-                        <p>• funcionario / func123</p>
-                      </div>
-                      
-                      <div>
-                        <p className="font-medium text-type-doubt">👤 Clientes (Apenas criar chamados):</p>
-                        <p>• cliente1 / client123</p>
-                        <p>• cliente2 / client123</p>
-                      </div>
+              <TabsContent value="login" className="space-y-4 mt-6">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Digite seu email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Senha</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Digite sua senha"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Entrando..." : "Entrar no Sistema"}
+                  </Button>
+                </form>
+                
+                <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-muted-foreground">
+                      <p className="font-medium mb-2">Contas de teste:</p>
+                      <p>• Admin: admin@demo.com / Admin123!</p>
+                      <p>• Cliente: cliente@demo.com / Cliente123!</p>
                     </div>
                   </div>
                 </div>
-              </div>
+              </TabsContent>
 
-              <Button 
-                type="submit" 
-                className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={isLoading}
-              >
-                {isLoading ? "Entrando..." : "Entrar no Sistema"}
-              </Button>
-            </form>
+              <TabsContent value="signup" className="space-y-4 mt-6">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Nome</Label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      placeholder="Digite seu nome"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="Digite seu email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Senha</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="Digite sua senha (min. 6 caracteres)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Tipo de conta</Label>
+                    <select
+                      value={role}
+                      onChange={(e) => setRole(e.target.value as 'admin' | 'client')}
+                      className="w-full h-11 px-3 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option value="client">Cliente</option>
+                      <option value="admin">Administrador</option>
+                    </select>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Criando conta..." : "Criar Conta"}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>

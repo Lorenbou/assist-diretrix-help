@@ -4,70 +4,51 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { storage } from '@/lib/storage';
-import { TicketType } from '@/types/ticket';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/AuthContext';
 import { ArrowLeft, Send, Bug, HelpCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { ticketService } from '@/lib/tickets';
+import { CreateTicketData } from '@/types/ticket';
 
 const CreateTicket = () => {
-  const [searchParams] = useSearchParams();
-  const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    username: user?.name || '',
-    type: '' as TicketType | '',
-    title: '',
-    description: ''
-  });
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [type, setType] = useState<'question' | 'bug'>('question');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [isLoading, setIsLoading] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Pre-fill form based on URL parameters and user info
-    const tipo = searchParams.get('tipo');
-    if (tipo === 'duvida') {
-      setFormData(prev => ({ ...prev, type: 'Dúvida' }));
-    } else if (tipo === 'bug') {
-      setFormData(prev => ({ ...prev, type: 'Bug' }));
+    const urlType = searchParams.get('tipo');
+    if (urlType === 'bug') {
+      setType('bug');
+    } else if (urlType === 'question') {
+      setType('question');
     }
-    
-    // Always use current user's name
-    if (user?.name) {
-      setFormData(prev => ({ ...prev, username: user.name }));
-    }
-  }, [searchParams, user]);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.type) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Por favor, selecione o tipo do chamado",
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const ticketData: CreateTicketData = {
+        title,
+        description,
+        type,
+        priority,
+      };
 
-      const ticket = storage.createTicket({
-        username: formData.username,
-        type: formData.type as TicketType,
-        title: formData.title,
-        description: formData.description
-      });
-
+      await ticketService.createTicket(ticketData);
+      
       toast({
         title: "Chamado criado com sucesso!",
-        description: `Chamado #${ticket.id} foi registrado no sistema`,
+        description: "Sua solicitação foi registrada e será analisada pela equipe.",
       });
 
       // Navigate based on user role
@@ -79,16 +60,12 @@ const CreateTicket = () => {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível criar o chamado. Tente novamente.",
+        title: "Erro ao criar chamado",
+        description: error instanceof Error ? error.message : "Tente novamente.",
       });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleBack = () => {
@@ -106,8 +83,9 @@ const CreateTicket = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Button
-              variant="ghost"
               onClick={handleBack}
+              variant="outline"
+              size="sm"
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -115,7 +93,9 @@ const CreateTicket = () => {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Criar Novo Chamado</h1>
-              <p className="text-muted-foreground">Registre sua dúvida ou reporte um bug</p>
+              <p className="text-muted-foreground">
+                Registre sua solicitação de suporte técnico
+              </p>
             </div>
           </div>
         </div>
@@ -123,135 +103,129 @@ const CreateTicket = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          <Card className="shadow-lg">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Send className="h-5 w-5 text-primary" />
-                Informações do Chamado
+                {type === 'bug' ? (
+                  <Bug className="h-5 w-5 text-type-bug" />
+                ) : (
+                  <HelpCircle className="h-5 w-5 text-type-doubt" />
+                )}
+                Detalhes do Chamado
               </CardTitle>
+              <CardDescription>
+                Preencha as informações abaixo para que possamos ajudá-lo da melhor forma possível
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Nome do Usuário *</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder="Digite seu nome completo"
-                    value={formData.username}
-                    onChange={(e) => handleInputChange('username', e.target.value)}
-                    required
-                    className="h-11"
-                    disabled={user?.role === 'client'} // Clients can't change their name
-                  />
-                  {user?.role === 'client' && (
-                    <p className="text-sm text-muted-foreground">
-                      Este campo é preenchido automaticamente com seu nome de usuário.
-                    </p>
-                  )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Tipo de Solicitação</Label>
+                    <Select value={type} onValueChange={(value: 'question' | 'bug') => setType(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="question">
+                          <div className="flex items-center gap-2">
+                            <HelpCircle className="h-4 w-4 text-type-doubt" />
+                            Dúvida
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="bug">
+                          <div className="flex items-center gap-2">
+                            <Bug className="h-4 w-4 text-type-bug" />
+                            Bug/Problema
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="priority">Prioridade</Label>
+                    <Select value={priority} onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => setPriority(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Baixa</SelectItem>
+                        <SelectItem value="medium">Média</SelectItem>
+                        <SelectItem value="high">Alta</SelectItem>
+                        <SelectItem value="urgent">Urgente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Tipo do Chamado *</Label>
-                  <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue placeholder="Selecione o tipo do chamado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Dúvida">
-                        <div className="flex items-center gap-2">
-                          <HelpCircle className="h-4 w-4 text-type-doubt" />
-                          <span>Dúvida</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Bug">
-                        <div className="flex items-center gap-2">
-                          <Bug className="h-4 w-4 text-type-bug" />
-                          <span>Bug</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-muted-foreground">
-                    {formData.type === 'Dúvida' && "Escolha esta opção para esclarecer dúvidas sobre o uso do sistema"}
-                    {formData.type === 'Bug' && "Escolha esta opção para reportar erros ou problemas técnicos"}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="title">Título do Chamado *</Label>
+                  <Label htmlFor="title">Título do Chamado</Label>
                   <Input
                     id="title"
-                    type="text"
                     placeholder="Descreva brevemente o problema ou dúvida"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     required
-                    className="h-11"
+                    maxLength={100}
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição Detalhada *</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Descreva detalhadamente sua dúvida ou o problema encontrado. Inclua passos para reproduzir o erro, se aplicável."
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    required
-                    rows={6}
-                    className="resize-none"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Quanto mais detalhes você fornecer, mais rápido conseguiremos ajudá-lo
+                  <p className="text-xs text-muted-foreground">
+                    {title.length}/100 caracteres
                   </p>
                 </div>
 
-                <div className="flex gap-4 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleBack}
-                    className="flex-1"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex-1 gap-2 bg-primary hover:bg-primary/90"
-                  >
-                    {isLoading ? (
-                      "Criando..."
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição Detalhada</Label>
+                  <Textarea
+                    id="description"
+                    placeholder={
+                      type === 'bug'
+                        ? "Descreva o problema encontrado, os passos para reproduzi-lo e o comportamento esperado..."
+                        : "Explique sua dúvida em detalhes, em qual parte do sistema está e o que está tentando fazer..."
+                    }
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    required
+                    rows={6}
+                    maxLength={1000}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {description.length}/1000 caracteres
+                  </p>
+                </div>
+
+                <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+                  <h4 className="font-semibold mb-2 text-sm">
+                    {type === 'bug' ? 'Dicas para reportar bugs:' : 'Dicas para fazer perguntas:'}
+                  </h4>
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    {type === 'bug' ? (
+                      <>
+                        <li>• Descreva exatamente o que aconteceu</li>
+                        <li>• Informe os passos que levaram ao problema</li>
+                        <li>• Mencione mensagens de erro, se houver</li>
+                        <li>• Inclua o navegador e sistema operacional</li>
+                      </>
                     ) : (
                       <>
-                        <Send className="h-4 w-4" />
-                        Criar Chamado
+                        <li>• Seja específico sobre sua dúvida</li>
+                        <li>• Informe em qual tela ou função está</li>
+                        <li>• Descreva o que está tentando fazer</li>
+                        <li>• Mencione se já tentou alguma solução</li>
                       </>
                     )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Help Card */}
-          <Card className="mt-6 border-primary/20 bg-primary/5">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                  <HelpCircle className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Dicas para um bom chamado:</h3>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Seja específico no título - isso ajuda na classificação</li>
-                    <li>• Descreva passos detalhados para reproduzir problemas</li>
-                    <li>• Inclua mensagens de erro, se houver</li>
-                    <li>• Informe o navegador e sistema operacional usado</li>
                   </ul>
                 </div>
-              </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full gap-2"
+                  disabled={isLoading}
+                >
+                  <Send className="h-4 w-4" />
+                  {isLoading ? "Criando chamado..." : "Criar Chamado"}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </div>
