@@ -1,33 +1,43 @@
-import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Shield } from 'lucide-react';
-import diretrixLogo from '@/assets/diretrix-logo.jpg';
+import { useState } from "react";
+import { useNavigate, Navigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { AlertCircle, Shield } from "lucide-react";
+import diretrixLogo from "@/assets/diretrix-logo.jpg";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [role, setRole] = useState<'admin' | 'client'>('client');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [role, setRole] = useState<"admin" | "client">("client");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('login');
+  const [activeTab, setActiveTab] = useState("login");
   const navigate = useNavigate();
   const { signIn, signUp, user, loading } = useAuth();
   const { toast } = useToast();
 
   // Redirect if already logged in
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Carregando...
+      </div>
+    );
   }
 
   if (user) {
-    if (user.role === 'admin') {
+    if (user.role === "admin") {
       return <Navigate to="/dashboard" replace />;
     } else {
       return <Navigate to="/cliente-dashboard" replace />;
@@ -39,7 +49,7 @@ const Login = () => {
     setIsLoading(true);
 
     const { error } = await signIn(email, password);
-    
+
     if (error) {
       toast({
         variant: "destructive",
@@ -52,7 +62,7 @@ const Login = () => {
         description: "Bem-vindo ao Sistema Diretrix",
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -61,7 +71,7 @@ const Login = () => {
     setIsLoading(true);
 
     const { error } = await signUp(name, email, password, role);
-    
+
     if (error) {
       toast({
         variant: "destructive",
@@ -73,9 +83,9 @@ const Login = () => {
         title: "Cadastro realizado com sucesso!",
         description: "Verifique seu email para confirmar sua conta.",
       });
-      setActiveTab('login');
+      setActiveTab("login");
     }
-    
+
     setIsLoading(false);
   };
 
@@ -84,8 +94,8 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 mb-4 rounded-2xl overflow-hidden shadow-lg bg-card">
-            <img 
-              src={diretrixLogo} 
+            <img
+              src={diretrixLogo}
               alt="Logo Diretrix"
               className="w-full h-full object-cover"
             />
@@ -96,7 +106,9 @@ const Login = () => {
 
         <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur">
           <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl text-center">Acesso ao Sistema</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              Acesso ao Sistema
+            </CardTitle>
             <CardDescription className="text-center">
               Entre com sua conta ou crie uma nova
             </CardDescription>
@@ -107,7 +119,7 @@ const Login = () => {
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="signup">Cadastrar</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="login" className="space-y-4 mt-6">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
@@ -135,25 +147,14 @@ const Login = () => {
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
                     disabled={isLoading}
                   >
                     {isLoading ? "Entrando..." : "Entrar no Sistema"}
                   </Button>
                 </form>
-                
-                <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-muted-foreground">
-                      <p className="font-medium mb-2">Contas de teste:</p>
-                      <p>• Admin: admin@demo.com / Admin123!</p>
-                      <p>• Cliente: cliente@demo.com / Cliente123!</p>
-                    </div>
-                  </div>
-                </div>
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4 mt-6">
@@ -199,7 +200,9 @@ const Login = () => {
                     <Label htmlFor="role">Tipo de conta</Label>
                     <select
                       value={role}
-                      onChange={(e) => setRole(e.target.value as 'admin' | 'client')}
+                      onChange={(e) =>
+                        setRole(e.target.value as "admin" | "client")
+                      }
                       className="w-full h-11 px-3 rounded-md border border-input bg-background text-sm"
                     >
                       <option value="client">Cliente</option>
@@ -207,8 +210,8 @@ const Login = () => {
                     </select>
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
                     disabled={isLoading}
                   >
