@@ -46,7 +46,7 @@ O **Assist Diretrix Help** é uma aplicação web moderna para gerenciamento de 
 1. **Clone o repositório**
 
    ```bash
-   git clone <URL_DO_REPOSITORIO>
+   git clone https://github.com/Lorenbou/assist-diretrix-help.git
    cd assist-diretrix-help
    ```
 
@@ -54,16 +54,13 @@ O **Assist Diretrix Help** é uma aplicação web moderna para gerenciamento de 
 
    ```bash
    npm install
-   # ou
-   yarn install
    ```
 
 3. **Execute o projeto em modo de desenvolvimento**
 
    ```bash
    npm run dev
-   # ou
-   yarn dev
+
    ```
 
 4. **Acesse a aplicação**
@@ -105,16 +102,6 @@ src/
 
 O sistema utiliza um contexto de autenticação simples baseado em localStorage para demonstração. Em um ambiente de produção, recomenda-se integrar com um backend real e sistema de autenticação robusto.
 
-### Credenciais de Demonstração
-
-- **Administrador**:
-
-  - Usuário: `admin`
-  - Senha: `admin123`
-
-- **Cliente**:
-  - Usuário: `cliente`
-  - Senha: `cliente123`
 
 ## 📱 Responsividade
 
@@ -142,9 +129,3 @@ Para fazer deploy da aplicação:
 2. **Os arquivos estarão na pasta `dist/`**
 
 3. **Faça upload para seu servidor de hospedagem**
-
-Para suporte e dúvidas sobre o projeto, entre em contato através dos canais oficiais da Diretrix.
-
----
-
-**Desenvolvido com ❤️ para a Diretrix**
