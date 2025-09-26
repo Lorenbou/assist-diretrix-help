@@ -27,7 +27,7 @@ O **Assist Diretrix Help** é uma aplicação web moderna para gerenciamento de 
 - **Frontend**: React 18 + TypeScript
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
-- **UI Components**: shadcn/ui + Radix UI
+- **UI Components**: Radix UI
 - **Roteamento**: React Router DOM
 - **Estado**: React Context API
 - **Formulários**: React Hook Form + Zod
@@ -44,12 +44,14 @@ O **Assist Diretrix Help** é uma aplicação web moderna para gerenciamento de 
 ### Passos para instalação
 
 1. **Clone o repositório**
+
    ```bash
    git clone <URL_DO_REPOSITORIO>
    cd assist-diretrix-help
    ```
 
 2. **Instale as dependências**
+
    ```bash
    npm install
    # ou
@@ -57,6 +59,7 @@ O **Assist Diretrix Help** é uma aplicação web moderna para gerenciamento de 
    ```
 
 3. **Execute o projeto em modo de desenvolvimento**
+
    ```bash
    npm run dev
    # ou
@@ -79,7 +82,7 @@ O **Assist Diretrix Help** é uma aplicação web moderna para gerenciamento de 
 ```
 src/
 ├── components/          # Componentes reutilizáveis
-│   ├── ui/             # Componentes de UI (shadcn/ui)
+│   ├── ui/             # Componentes de UI
 │   ├── AdminRoute.tsx  # Rota protegida para administradores
 │   └── ProtectedRoute.tsx # Rota protegida para usuários autenticados
 ├── context/            # Contextos React
@@ -104,17 +107,19 @@ O sistema utiliza um contexto de autenticação simples baseado em localStorage 
 
 ### Credenciais de Demonstração
 
-- **Administrador**: 
+- **Administrador**:
+
   - Usuário: `admin`
   - Senha: `admin123`
 
-- **Cliente**: 
+- **Cliente**:
   - Usuário: `cliente`
   - Senha: `cliente123`
 
 ## 📱 Responsividade
 
 A aplicação foi desenvolvida com foco na responsividade, funcionando perfeitamente em:
+
 - 📱 Dispositivos móveis
 - 📱 Tablets
 - 💻 Desktops
@@ -122,17 +127,14 @@ A aplicação foi desenvolvida com foco na responsividade, funcionando perfeitam
 
 ## 🎨 Design System
 
-O projeto utiliza o **shadcn/ui** como base para os componentes, garantindo:
-- Consistência visual
-- Acessibilidade
-- Customização fácil
-- Performance otimizada
+O projeto utiliza um conjunto de componentes baseados em **Radix UI** e estilos utilitários do Tailwind para garantir consistência visual, acessibilidade e performance.
 
 ## 🚀 Deploy
 
 Para fazer deploy da aplicação:
 
 1. **Gere o build de produção**
+
    ```bash
    npm run build
    ```
@@ -140,7 +142,6 @@ Para fazer deploy da aplicação:
 2. **Os arquivos estarão na pasta `dist/`**
 
 3. **Faça upload para seu servidor de hospedagem**
-
 
 Para suporte e dúvidas sobre o projeto, entre em contato através dos canais oficiais da Diretrix.
 
