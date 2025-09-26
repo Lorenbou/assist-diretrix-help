@@ -21,40 +21,45 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <AdminRoute>
                   <Dashboard />
                 </AdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="/cliente-dashboard" 
+            <Route
+              path="/cliente-dashboard"
               element={
                 <ProtectedRoute>
                   <ClientDashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/criar-chamado" 
+            <Route
+              path="/criar-chamado"
               element={
                 <ProtectedRoute>
                   <CreateTicket />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/chamado/:id" 
+            <Route
+              path="/chamado/:id"
               element={
                 <AdminRoute>
                   <TicketDetails />
                 </AdminRoute>
-              } 
+              }
             />
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
