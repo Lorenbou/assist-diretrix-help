@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ticketService } from '@/lib/tickets';
+import { getStatusConfig, getTypeConfig, formatTicketDate } from '@/lib/ticketUtils';
 import { Ticket } from '@/types/ticket';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Calendar, User, Tag, AlertTriangle, Clock, CheckCircle, AlertCircle, Bug, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Tag, AlertTriangle } from 'lucide-react';
 
 const TicketDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,13 +52,16 @@ const TicketDetails = () => {
     setIsUpdating(true);
 
     try {
-      const updatedTicket = await ticketService.updateTicket(ticket.id, { status: newStatus });
+      const updatedTicket = await ticketService.updateTicket(ticket.id, { 
+        status: newStatus as Ticket['status'] 
+      });
       
       if (updatedTicket) {
         setTicket(updatedTicket);
+        const newStatusConfig = getStatusConfig(newStatus as Ticket['status']);
         toast({
           title: "Status atualizado!",
-          description: `Chamado marcado como "${getStatusLabel(newStatus)}"`,
+          description: `Chamado marcado como "${newStatusConfig.label}"`,
         });
       }
     } catch (error) {
@@ -82,55 +86,10 @@ const TicketDetails = () => {
     );
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'open': return <AlertCircle className="h-4 w-4" />;
-      case 'in_progress': return <Clock className="h-4 w-4" />;
-      case 'closed': return <CheckCircle className="h-4 w-4" />;
-      default: return <AlertCircle className="h-4 w-4" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return 'bg-status-open text-white';
-      case 'in_progress': return 'bg-status-progress text-white';
-      case 'closed': return 'bg-status-completed text-white';
-      default: return 'bg-status-open text-white';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'open': return 'Aberto';
-      case 'in_progress': return 'Em andamento';
-      case 'closed': return 'Concluído';
-      default: return status;
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    return type === 'bug' ? <Bug className="h-4 w-4" /> : <HelpCircle className="h-4 w-4" />;
-  };
-
-  const getTypeColor = (type: string) => {
-    return type === 'bug' ? 'bg-type-bug text-white' : 'bg-type-doubt text-white';
-  };
-
-  const getTypeLabel = (type: string) => {
-    return type === 'bug' ? 'Bug' : 'Dúvida';
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const statusConfig = getStatusConfig(ticket.status);
+  const typeConfig = getTypeConfig(ticket.type);
+  const StatusIcon = statusConfig.icon;
+  const TypeIcon = typeConfig.icon;
 
   const getAvailableStatusOptions = () => {
     const options: string[] = [];
@@ -144,7 +103,6 @@ const TicketDetails = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card border-b border-border shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
@@ -168,7 +126,6 @@ const TicketDetails = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Status Update Card */}
           <Card className="border-primary/20 bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -180,30 +137,34 @@ const TicketDetails = () => {
               <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-muted-foreground mb-1">Status Atual</p>
-                  <Badge className={`gap-2 text-sm ${getStatusColor(ticket.status)}`}>
-                    {getStatusIcon(ticket.status)}
-                    {getStatusLabel(ticket.status)}
+                  <Badge className={`gap-2 text-sm ${statusConfig.color}`}>
+                    <StatusIcon className="h-4 w-4" />
+                    {statusConfig.label}
                   </Badge>
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-muted-foreground mb-2">Alterar para:</p>
                   <Select
                     value=""
-                    onValueChange={(value) => handleStatusUpdate(value as TicketStatus)}
+                    onValueChange={(value) => handleStatusUpdate(value)}
                     disabled={isUpdating}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecionar novo status" />
                     </SelectTrigger>
                     <SelectContent>
-                      {getAvailableStatusOptions().map((status) => (
-                        <SelectItem key={status} value={status}>
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(status)}
-                            {getStatusLabel(status)}
-                          </div>
-                        </SelectItem>
-                      ))}
+                      {getAvailableStatusOptions().map((status) => {
+                        const config = getStatusConfig(status as Ticket['status']);
+                        const Icon = config.icon;
+                        return (
+                          <SelectItem key={status} value={status}>
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-4 w-4" />
+                              {config.label}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -211,19 +172,18 @@ const TicketDetails = () => {
             </CardContent>
           </Card>
 
-          {/* Main Ticket Info */}
           <Card className="shadow-lg">
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <Badge className={`gap-1 ${getTypeColor(ticket.type)}`}>
-                      {getTypeIcon(ticket.type)}
-                      {getTypeLabel(ticket.type)}
+                    <Badge className={`gap-1 ${typeConfig.color}`}>
+                      <TypeIcon className="h-4 w-4" />
+                      {typeConfig.label}
                     </Badge>
-                    <Badge className={`gap-1 ${getStatusColor(ticket.status)}`}>
-                      {getStatusIcon(ticket.status)}
-                      {getStatusLabel(ticket.status)}
+                    <Badge className={`gap-1 ${statusConfig.color}`}>
+                      <StatusIcon className="h-4 w-4" />
+                      {statusConfig.label}
                     </Badge>
                   </div>
                   <CardTitle className="text-2xl mb-2">{ticket.title}</CardTitle>
@@ -231,7 +191,6 @@ const TicketDetails = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Metadata */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                   <User className="h-5 w-5 text-muted-foreground" />
@@ -244,14 +203,13 @@ const TicketDetails = () => {
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Criado em</p>
-                    <p className="font-semibold text-sm">{formatDate(ticket.created_at)}</p>
+                    <p className="font-semibold text-sm">{formatTicketDate(ticket.created_at, true)}</p>
                   </div>
                 </div>
               </div>
 
               <Separator />
 
-              {/* Description */}
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
                   <Tag className="h-4 w-4" />
@@ -262,13 +220,12 @@ const TicketDetails = () => {
                 </div>
               </div>
 
-              {/* Timeline hint */}
               <div className="bg-card border rounded-lg p-4">
                 <h4 className="font-medium mb-2">Histórico do Chamado</h4>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span>Criado: {formatDate(ticket.created_at)}</span>
+                    <span>Criado: {formatTicketDate(ticket.created_at, true)}</span>
                   </div>
                 </div>
                 {ticket.status !== 'open' && (
@@ -277,7 +234,7 @@ const TicketDetails = () => {
                       <div className={`w-2 h-2 rounded-full ${
                         ticket.status === 'in_progress' ? 'bg-status-progress' : 'bg-status-completed'
                       }`}></div>
-                      <span>Status atual: {getStatusLabel(ticket.status)}</span>
+                      <span>Status atual: {statusConfig.label}</span>
                     </div>
                   </div>
                 )}
@@ -285,7 +242,6 @@ const TicketDetails = () => {
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
           <div className="flex gap-4">
             <Button
               onClick={() => navigate('/dashboard')}

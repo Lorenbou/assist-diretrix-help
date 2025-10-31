@@ -51,7 +51,6 @@ const CreateTicket = () => {
         description: "Sua solicitação foi registrada e será analisada pela equipe.",
       });
 
-      // Navigate based on user role
       if (user?.role === 'admin') {
         navigate('/dashboard');
       } else {
@@ -78,7 +77,6 @@ const CreateTicket = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card border-b border-border shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">

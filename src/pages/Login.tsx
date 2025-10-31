@@ -27,7 +27,6 @@ const Login = () => {
   const { signIn, signUp, user, loading } = useAuth();
   const { toast } = useToast();
 
-  // Redirect if already logged in
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">

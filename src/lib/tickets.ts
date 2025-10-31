@@ -2,7 +2,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Ticket, CreateTicketData, TicketComment, TicketAttachment } from '@/types/ticket';
 
 export const ticketService = {
-  // Fetch tickets with user data
   async getTickets(filters?: {
     status?: string;
     type?: string;
@@ -38,7 +37,6 @@ export const ticketService = {
     return data as Ticket[];
   },
 
-  // Get single ticket by ID
   async getTicketById(id: string): Promise<Ticket | null> {
     const { data, error } = await supabase
       .from('tickets')
@@ -60,7 +58,6 @@ export const ticketService = {
     return data as Ticket;
   },
 
-  // Create new ticket
   async createTicket(ticketData: CreateTicketData): Promise<Ticket> {
     const { data, error } = await supabase.rpc('create_ticket_with_activity', {
       title_param: ticketData.title,
@@ -73,7 +70,6 @@ export const ticketService = {
       throw new Error(error.message);
     }
 
-    // Fetch the created ticket
     const ticket = await this.getTicketById(data);
     if (!ticket) {
       throw new Error('Failed to fetch created ticket');
@@ -82,7 +78,6 @@ export const ticketService = {
     return ticket;
   },
 
-  // Update ticket
   async updateTicket(id: string, updates: Partial<Ticket>): Promise<Ticket> {
     const { error } = await supabase
       .from('tickets')
@@ -93,7 +88,6 @@ export const ticketService = {
       throw new Error(error.message);
     }
 
-    // Log activity if status or assignment changed
     if (updates.status) {
       await supabase.rpc('log_ticket_activity', {
         ticket_id_param: id,
@@ -110,7 +104,6 @@ export const ticketService = {
       });
     }
 
-    // Fetch updated ticket
     const ticket = await this.getTicketById(id);
     if (!ticket) {
       throw new Error('Failed to fetch updated ticket');
@@ -137,7 +130,6 @@ export const ticketService = {
     return data || [];
   },
 
-  // Add comment to ticket
   async addComment(ticketId: string, content: string): Promise<TicketComment> {
     const { data, error } = await supabase
       .from('ticket_comments')
@@ -156,7 +148,6 @@ export const ticketService = {
       throw new Error(error.message);
     }
 
-    // Log activity
     await supabase.rpc('log_ticket_activity', {
       ticket_id_param: ticketId,
       action_param: 'commented',
@@ -166,7 +157,6 @@ export const ticketService = {
     return data;
   },
 
-  // Get ticket attachments
   async getTicketAttachments(ticketId: string): Promise<TicketAttachment[]> {
     const { data, error } = await supabase
       .from('ticket_attachments')
@@ -184,12 +174,10 @@ export const ticketService = {
     return data || [];
   },
 
-  // Upload attachment
   async uploadAttachment(ticketId: string, file: File): Promise<TicketAttachment> {
     const fileName = `${Date.now()}-${file.name}`;
     const filePath = `${ticketId}/${fileName}`;
 
-    // Upload to storage
     const { error: uploadError } = await supabase.storage
       .from('attachments')
       .upload(filePath, file);
@@ -198,7 +186,6 @@ export const ticketService = {
       throw new Error(uploadError.message);
     }
 
-    // Create attachment record
     const { data, error } = await supabase
       .from('ticket_attachments')
       .insert({
@@ -218,7 +205,6 @@ export const ticketService = {
       throw new Error(error.message);
     }
 
-    // Log activity
     await supabase.rpc('log_ticket_activity', {
       ticket_id_param: ticketId,
       action_param: 'attached',
@@ -228,7 +214,6 @@ export const ticketService = {
     return data;
   },
 
-  // Download attachment
   async downloadAttachment(filePath: string): Promise<Blob> {
     const { data, error } = await supabase.storage
       .from('attachments')
@@ -241,7 +226,6 @@ export const ticketService = {
     return data;
   },
 
-  // Get all users for assignment
   async getUsers(): Promise<Array<{ id: string; name: string; email: string; role: string }>> {
     const { data, error } = await supabase
       .from('users')
