@@ -2,9 +2,9 @@ export interface Ticket {
   id: string;
   title: string;
   description: string;
-  status: 'open' | 'in_progress' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  type: 'question' | 'bug';
+  status: "open" | "in_progress" | "closed";
+  priority: "low" | "medium" | "high" | "urgent";
+  type: "question" | "bug";
   created_by: string;
   assigned_to?: string;
   created_at: string;
@@ -24,8 +24,8 @@ export interface Ticket {
 export interface CreateTicketData {
   title: string;
   description: string;
-  type: 'question' | 'bug';
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  type: "question" | "bug";
+  priority?: "low" | "medium" | "high" | "urgent";
 }
 
 export interface TicketComment {
@@ -58,8 +58,14 @@ export interface TicketActivity {
   id: string;
   ticket_id: string;
   actor_id: string;
-  action: 'created' | 'updated' | 'status_changed' | 'assigned' | 'commented' | 'attached';
-  meta: Record<string, any>;
+  action:
+    | "created"
+    | "updated"
+    | "status_changed"
+    | "assigned"
+    | "commented"
+    | "attached";
+  meta: Record<string, unknown>;
   created_at: string;
   actor?: {
     name: string;

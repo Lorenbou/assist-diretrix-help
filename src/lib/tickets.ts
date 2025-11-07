@@ -112,7 +112,7 @@ export const ticketService = {
     return ticket;
   },
 
-  // Get ticket comments
+  
   async getTicketComments(ticketId: string): Promise<TicketComment[]> {
     const { data, error } = await supabase
       .from('ticket_comments')
