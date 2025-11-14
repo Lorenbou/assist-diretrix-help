@@ -1,4 +1,4 @@
--- Create users table
+-- Criar tabela de usuários
 CREATE TABLE public.users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE public.users (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Create tickets table
+-- Criar tabela de tickets
 CREATE TABLE public.tickets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE public.tickets (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Create ticket_comments table
+-- Criar tabela de comentários dos tickets
 CREATE TABLE public.ticket_comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id UUID NOT NULL REFERENCES public.tickets(id) ON DELETE CASCADE,
@@ -30,7 +30,7 @@ CREATE TABLE public.ticket_comments (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Create ticket_attachments table
+-- Criar tabela de anexos dos tickets
 CREATE TABLE public.ticket_attachments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id UUID NOT NULL REFERENCES public.tickets(id) ON DELETE CASCADE,
@@ -41,7 +41,7 @@ CREATE TABLE public.ticket_attachments (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Create ticket_activity table
+-- Criar tabela de atividades dos tickets
 CREATE TABLE public.ticket_activity (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id UUID NOT NULL REFERENCES public.tickets(id) ON DELETE CASCADE,
@@ -51,7 +51,7 @@ CREATE TABLE public.ticket_activity (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Create indexes for performance
+-- Criar índices para melhorar a performance
 CREATE INDEX idx_tickets_status ON public.tickets(status);
 CREATE INDEX idx_tickets_created_by ON public.tickets(created_by);
 CREATE INDEX idx_tickets_assigned_to ON public.tickets(assigned_to);
@@ -60,14 +60,14 @@ CREATE INDEX idx_ticket_comments_ticket_id ON public.ticket_comments(ticket_id);
 CREATE INDEX idx_ticket_attachments_ticket_id ON public.ticket_attachments(ticket_id);
 CREATE INDEX idx_ticket_activity_ticket_id ON public.ticket_activity(ticket_id);
 
--- Enable Row Level Security on all tables
+-- Habilitar Row Level Security em todas as tabelas
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ticket_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ticket_attachments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ticket_activity ENABLE ROW LEVEL SECURITY;
 
--- Create function to update updated_at column
+-- Criar função para atualizar a coluna updated_at
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -76,19 +76,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger for tickets updated_at
+-- Criar trigger para atualizar updated_at dos tickets
 CREATE TRIGGER update_tickets_updated_at
   BEFORE UPDATE ON public.tickets
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
 
--- Create function to get current user role
+-- Criar função para obter o papel do usuário atual
 CREATE OR REPLACE FUNCTION public.get_current_user_role()
 RETURNS TEXT AS $$
   SELECT role FROM public.users WHERE id = auth.uid();
 $$ LANGUAGE SQL SECURITY DEFINER STABLE SET search_path = public;
 
--- Create function to check if user is admin
+-- Criar função para verificar se o usuário é administrador
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
   SELECT EXISTS (
@@ -97,14 +97,14 @@ RETURNS BOOLEAN AS $$
   );
 $$ LANGUAGE SQL SECURITY DEFINER STABLE SET search_path = public;
 
--- RLS Policies for users table
+-- Políticas RLS para a tabela de usuários
 CREATE POLICY "Users can view own profile" ON public.users
   FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "Admins can view all users" ON public.users
   FOR SELECT USING (public.is_admin());
 
--- RLS Policies for tickets table
+-- Políticas RLS para a tabela de tickets
 CREATE POLICY "Users can view own tickets" ON public.tickets
   FOR SELECT USING (auth.uid() = created_by);
 
@@ -130,7 +130,7 @@ CREATE POLICY "Admins can update all tickets" ON public.tickets
 CREATE POLICY "Admins can delete tickets" ON public.tickets
   FOR DELETE USING (public.is_admin());
 
--- RLS Policies for ticket_comments table
+-- Políticas RLS para a tabela de comentários dos tickets
 CREATE POLICY "Users can view comments on accessible tickets" ON public.ticket_comments
   FOR SELECT USING (
     EXISTS (
@@ -152,7 +152,7 @@ CREATE POLICY "Users can create comments on accessible tickets" ON public.ticket
     )
   );
 
--- RLS Policies for ticket_attachments table
+-- Políticas RLS para a tabela de anexos dos tickets
 CREATE POLICY "Users can view attachments on accessible tickets" ON public.ticket_attachments
   FOR SELECT USING (
     EXISTS (
@@ -174,7 +174,7 @@ CREATE POLICY "Users can upload attachments to accessible tickets" ON public.tic
     )
   );
 
--- RLS Policies for ticket_activity table
+-- Políticas RLS para a tabela de atividades dos tickets
 CREATE POLICY "Users can view activity on accessible tickets" ON public.ticket_activity
   FOR SELECT USING (
     EXISTS (
@@ -185,7 +185,7 @@ CREATE POLICY "Users can view activity on accessible tickets" ON public.ticket_a
     )
   );
 
--- Function to register user after signup
+-- Função para registrar usuário após cadastro
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -200,12 +200,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Trigger to create user profile on signup
+-- Trigger para criar perfil do usuário no cadastro
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Function to log ticket activity
+-- Função para registrar atividade do ticket
 CREATE OR REPLACE FUNCTION public.log_ticket_activity(
   ticket_id_param UUID,
   action_param TEXT,
@@ -223,10 +223,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Create storage bucket for attachments
+-- Criar bucket de armazenamento para anexos
 INSERT INTO storage.buckets (id, name, public) VALUES ('attachments', 'attachments', false);
 
--- Storage policies for attachments bucket
+-- Políticas de armazenamento para o bucket de anexos
 CREATE POLICY "Users can view attachments they have access to" ON storage.objects
   FOR SELECT USING (
     bucket_id = 'attachments' AND
@@ -245,7 +245,7 @@ CREATE POLICY "Users can upload attachments" ON storage.objects
     auth.uid() IS NOT NULL
   );
 
--- Function to create ticket with activity log
+-- Função para criar ticket com registro de atividade
 CREATE OR REPLACE FUNCTION public.create_ticket_with_activity(
   title_param TEXT,
   description_param TEXT,
