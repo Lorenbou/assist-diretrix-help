@@ -14,7 +14,9 @@ CREATE TABLE public.tickets (
   description TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('open', 'in_progress', 'closed')),
   priority TEXT NOT NULL CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
-  type TEXT NOT NULL CHECK (type IN ('question', 'bug')),
+  type TEXT NOT NULL CHECK (type IN ('question', 'bug', 'development')),
+  due_date DATE,
+  attachment TEXT,
   created_by UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   assigned_to UUID REFERENCES public.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT now(),
@@ -250,14 +252,16 @@ CREATE OR REPLACE FUNCTION public.create_ticket_with_activity(
   title_param TEXT,
   description_param TEXT,
   type_param TEXT,
-  priority_param TEXT DEFAULT 'medium'
+  priority_param TEXT DEFAULT 'medium',
+  due_date_param DATE DEFAULT NULL,
+  attachment_param TEXT DEFAULT NULL
 )
 RETURNS UUID AS $$
 DECLARE
   ticket_id UUID;
 BEGIN
-  INSERT INTO public.tickets (title, description, type, priority, status, created_by)
-  VALUES (title_param, description_param, type_param, priority_param, 'open', auth.uid())
+  INSERT INTO public.tickets (title, description, type, priority, due_date, attachment, status, created_by)
+  VALUES (title_param, description_param, type_param, priority_param, due_date_param, attachment_param, 'open', auth.uid())
   RETURNING id INTO ticket_id;
   
   PERFORM public.log_ticket_activity(
@@ -266,7 +270,9 @@ BEGIN
     jsonb_build_object(
       'title', title_param,
       'type', type_param,
-      'priority', priority_param
+      'priority', priority_param,
+      'due_date', due_date_param,
+      'has_attachment', attachment_param IS NOT NULL
     )
   );
   

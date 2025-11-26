@@ -13,16 +13,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { ticketService } from "@/lib/tickets";
-import { getStatusConfig, getTypeConfig, formatTicketDate } from "@/lib/ticketUtils";
+import {
+  getStatusConfig,
+  getTypeConfig,
+  formatTicketDate,
+  formatTicketDueDate,
+  isTicketOverdue,
+} from "@/lib/ticketUtils";
 import { Ticket } from "@/types/ticket";
-import { Plus, Search, LogOut, AlertCircle, Clock, CheckCircle } from "lucide-react";
+import {
+  Plus,
+  Search,
+  LogOut,
+  AlertCircle,
+  Clock,
+  CheckCircle,
+  Paperclip,
+} from "lucide-react";
 
 const Dashboard = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [filteredTickets, setFilteredTickets] = useState<Ticket[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"question" | "bug" | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<"open" | "in_progress" | "closed" | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<Ticket["type"] | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "open" | "in_progress" | "closed" | "all"
+  >("all");
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
@@ -37,7 +53,9 @@ const Dashboard = () => {
       filtered = filtered.filter(
         (ticket) =>
           ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          ticket.created_by_user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          ticket.created_by_user?.name
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
           ticket.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -102,22 +120,27 @@ const Dashboard = () => {
           <Select
             value={typeFilter}
             onValueChange={(value) =>
-              setTypeFilter(value as "question" | "bug" | "all")
+              setTypeFilter(value as Ticket["type"] | "all")
             }
           >
             <SelectTrigger className="w-full md:w-40">
-              <SelectValue placeholder="Tipo" />
+              <SelectValue placeholder="Tipo de solicitação" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os tipos</SelectItem>
               <SelectItem value="question">Dúvida</SelectItem>
               <SelectItem value="bug">Bug</SelectItem>
+              <SelectItem value="development">
+                Solicitação de desenvolvimento
+              </SelectItem>
             </SelectContent>
           </Select>
           <Select
             value={statusFilter}
             onValueChange={(value) =>
-              setStatusFilter(value as "open" | "in_progress" | "closed" | "all")
+              setStatusFilter(
+                value as "open" | "in_progress" | "closed" | "all"
+              )
             }
           >
             <SelectTrigger className="w-full md:w-40">
@@ -144,7 +167,9 @@ const Dashboard = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Total
+                  </p>
                   <p className="text-2xl font-bold">{tickets.length}</p>
                 </div>
                 <div className="h-8 w-8 bg-muted rounded-lg flex items-center justify-center">
@@ -157,7 +182,9 @@ const Dashboard = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Abertos</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Abertos
+                  </p>
                   <p className="text-2xl font-bold text-status-open">
                     {tickets.filter((t) => t.status === "open").length}
                   </p>
@@ -172,7 +199,9 @@ const Dashboard = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Em Andamento</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Em Andamento
+                  </p>
                   <p className="text-2xl font-bold text-status-progress">
                     {tickets.filter((t) => t.status === "in_progress").length}
                   </p>
@@ -187,7 +216,9 @@ const Dashboard = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Concluídos</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Concluídos
+                  </p>
                   <p className="text-2xl font-bold text-status-completed">
                     {tickets.filter((t) => t.status === "closed").length}
                   </p>
@@ -219,6 +250,7 @@ const Dashboard = () => {
               const statusConfig = getStatusConfig(ticket.status);
               const TypeIcon = typeConfig.icon;
               const StatusIcon = statusConfig.icon;
+              const overdue = isTicketOverdue(ticket);
 
               return (
                 <Card
@@ -238,6 +270,15 @@ const Dashboard = () => {
                             <StatusIcon className="h-4 w-4" />
                             {statusConfig.label}
                           </Badge>
+                          {ticket.attachment && (
+                            <Badge
+                              variant="secondary"
+                              className="gap-1 text-xs"
+                            >
+                              <Paperclip className="h-3 w-3" />
+                              Anexo
+                            </Badge>
+                          )}
                         </div>
                         <h3 className="font-semibold text-lg mb-2">
                           {ticket.title}
@@ -255,6 +296,24 @@ const Dashboard = () => {
                           <span>•</span>
                           <span>{formatTicketDate(ticket.created_at)}</span>
                         </div>
+                        {ticket.due_date && (
+                          <div className="mt-2 flex items-center gap-2 text-sm">
+                            <span
+                              className={
+                                overdue
+                                  ? "text-destructive font-semibold"
+                                  : "text-muted-foreground font-medium"
+                              }
+                            >
+                              Prazo: {formatTicketDueDate(ticket.due_date)}
+                            </span>
+                            {overdue && (
+                              <span className="text-destructive text-xs font-semibold uppercase tracking-wide">
+                                Prazo vencido
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

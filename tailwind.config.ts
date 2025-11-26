@@ -61,6 +61,7 @@ export default {
         type: {
           bug: "hsl(var(--type-bug))",
           doubt: "hsl(var(--type-doubt))",
+          development: "hsl(var(--type-development))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

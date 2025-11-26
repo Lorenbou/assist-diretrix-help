@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User, Session } from "@supabase/supabase-js";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 interface AuthUser {
   id: string;
@@ -32,7 +31,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchUserProfile = async (userId: string) => {
     const { data: profile, error } = await supabase
@@ -50,48 +48,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
+    const syncProfile = async (nextSession: Session | null) => {
+      setSession(nextSession);
 
-      if (session?.user) {
-        setTimeout(async () => {
-          const profile = await fetchUserProfile(session.user.id);
-          if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              name: profile.name,
-              role: profile.role as "admin" | "client",
-            });
-          }
-        }, 0);
+      if (nextSession?.user) {
+        const profile = await fetchUserProfile(nextSession.user.id);
+        if (profile) {
+          setUser({
+            id: profile.id,
+            email: profile.email,
+            name: profile.name,
+            role: profile.role as "admin" | "client",
+          });
+        }
       } else {
         setUser(null);
       }
 
       setLoading(false);
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void syncProfile(nextSession);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-
-      if (session?.user) {
-        fetchUserProfile(session.user.id).then((profile) => {
-          if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              name: profile.name,
-              role: profile.role as "admin" | "client",
-            });
-          }
-          setLoading(false);
-        });
-      } else {
-        setLoading(false);
-      }
+      void syncProfile(session);
     });
 
     return () => subscription.unsubscribe();

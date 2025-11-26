@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
 @layer base {
   :root {
     --background: 240 10% 98%;
@@ -34,22 +32,29 @@
     --input: 240 6% 90%;
     --ring: 217 91% 60%;
 
-    
     --status-open: 220 91% 54%;
     --status-progress: 36 77% 49%;
     --status-completed: 142 71% 45%;
-    
-    
+
     --type-bug: 0 84% 60%;
     --type-doubt: 217 91% 60%;
+    --type-development: 278 72% 55%;
 
-    
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 70%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(240 10% 98%) 100%);
-    
-    
-    --shadow-card: 0 4px 6px -1px hsl(240 10% 9% / 0.1), 0 2px 4px -1px hsl(240 10% 9% / 0.06);
-    --shadow-elevated: 0 20px 25px -5px hsl(240 10% 9% / 0.1), 0 10px 10px -5px hsl(240 10% 9% / 0.04);
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(217 91% 60%) 0%,
+      hsl(217 91% 70%) 100%
+    );
+    --gradient-card: linear-gradient(
+      145deg,
+      hsl(0 0% 100%) 0%,
+      hsl(240 10% 98%) 100%
+    );
+
+    --shadow-card: 0 4px 6px -1px hsl(240 10% 9% / 0.1),
+      0 2px 4px -1px hsl(240 10% 9% / 0.06);
+    --shadow-elevated: 0 20px 25px -5px hsl(240 10% 9% / 0.1),
+      0 10px 10px -5px hsl(240 10% 9% / 0.04);
 
     --radius: 0.5rem;
 

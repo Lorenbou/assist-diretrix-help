@@ -1,15 +1,35 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ticketService } from '@/lib/tickets';
-import { getStatusConfig, getTypeConfig, formatTicketDate } from '@/lib/ticketUtils';
-import { Ticket } from '@/types/ticket';
-import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Calendar, User, Tag, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ticketService } from "@/lib/tickets";
+import {
+  getStatusConfig,
+  getTypeConfig,
+  formatTicketDate,
+  formatTicketDueDate,
+  isTicketOverdue,
+} from "@/lib/ticketUtils";
+import { Ticket } from "@/types/ticket";
+import { useToast } from "@/hooks/use-toast";
+import {
+  ArrowLeft,
+  Calendar,
+  User,
+  Tag,
+  AlertTriangle,
+  CalendarDays,
+  Image as ImageIcon,
+} from "lucide-react";
 
 const TicketDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +51,7 @@ const TicketDetails = () => {
               title: "Chamado não encontrado",
               description: "O chamado solicitado não existe ou foi removido",
             });
-            navigate('/dashboard');
+            navigate("/dashboard");
           }
         } catch (error) {
           toast({
@@ -39,7 +59,7 @@ const TicketDetails = () => {
             title: "Erro ao carregar chamado",
             description: "Não foi possível carregar o chamado",
           });
-          navigate('/dashboard');
+          navigate("/dashboard");
         }
       };
       loadTicket();
@@ -52,13 +72,13 @@ const TicketDetails = () => {
     setIsUpdating(true);
 
     try {
-      const updatedTicket = await ticketService.updateTicket(ticket.id, { 
-        status: newStatus as Ticket['status'] 
+      const updatedTicket = await ticketService.updateTicket(ticket.id, {
+        status: newStatus as Ticket["status"],
       });
-      
+
       if (updatedTicket) {
         setTicket(updatedTicket);
-        const newStatusConfig = getStatusConfig(newStatus as Ticket['status']);
+        const newStatusConfig = getStatusConfig(newStatus as Ticket["status"]);
         toast({
           title: "Status atualizado!",
           description: `Chamado marcado como "${newStatusConfig.label}"`,
@@ -90,14 +110,15 @@ const TicketDetails = () => {
   const typeConfig = getTypeConfig(ticket.type);
   const StatusIcon = statusConfig.icon;
   const TypeIcon = typeConfig.icon;
+  const overdue = isTicketOverdue(ticket);
 
   const getAvailableStatusOptions = () => {
     const options: string[] = [];
-    
-    if (ticket.status !== 'open') options.push('open');
-    if (ticket.status !== 'in_progress') options.push('in_progress');
-    if (ticket.status !== 'closed') options.push('closed');
-    
+
+    if (ticket.status !== "open") options.push("open");
+    if (ticket.status !== "in_progress") options.push("in_progress");
+    if (ticket.status !== "closed") options.push("closed");
+
     return options;
   };
 
@@ -108,7 +129,7 @@ const TicketDetails = () => {
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate("/dashboard")}
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -136,14 +157,18 @@ const TicketDetails = () => {
             <CardContent>
               <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Status Atual</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    Status Atual
+                  </p>
                   <Badge className={`gap-2 text-sm ${statusConfig.color}`}>
                     <StatusIcon className="h-4 w-4" />
                     {statusConfig.label}
                   </Badge>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground mb-2">Alterar para:</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
+                    Alterar para:
+                  </p>
                   <Select
                     value=""
                     onValueChange={(value) => handleStatusUpdate(value)}
@@ -154,7 +179,9 @@ const TicketDetails = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {getAvailableStatusOptions().map((status) => {
-                        const config = getStatusConfig(status as Ticket['status']);
+                        const config = getStatusConfig(
+                          status as Ticket["status"]
+                        );
                         const Icon = config.icon;
                         return (
                           <SelectItem key={status} value={status}>
@@ -186,26 +213,72 @@ const TicketDetails = () => {
                       {statusConfig.label}
                     </Badge>
                   </div>
-                  <CardTitle className="text-2xl mb-2">{ticket.title}</CardTitle>
+                  <CardTitle className="text-2xl mb-2">
+                    {ticket.title}
+                  </CardTitle>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                className={`grid grid-cols-1 ${
+                  ticket.due_date ? "md:grid-cols-3" : "md:grid-cols-2"
+                } gap-4`}
+              >
                 <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                   <User className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Usuário</p>
-                    <p className="font-semibold">{ticket.created_by_user?.name || 'Usuário'}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Usuário
+                    </p>
+                    <p className="font-semibold">
+                      {ticket.created_by_user?.name || "Usuário"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Criado em</p>
-                    <p className="font-semibold text-sm">{formatTicketDate(ticket.created_at, true)}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Criado em
+                    </p>
+                    <p className="font-semibold text-sm">
+                      {formatTicketDate(ticket.created_at, true)}
+                    </p>
                   </div>
                 </div>
+                {ticket.due_date && (
+                  <div
+                    className={`flex items-center gap-3 p-3 rounded-lg ${
+                      overdue
+                        ? "bg-destructive/5 border border-destructive/40"
+                        : "bg-muted/30"
+                    }`}
+                  >
+                    <CalendarDays
+                      className={`h-5 w-5 ${
+                        overdue ? "text-destructive" : "text-muted-foreground"
+                      }`}
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Prazo desejado
+                      </p>
+                      <p
+                        className={`font-semibold text-sm ${
+                          overdue ? "text-destructive" : ""
+                        }`}
+                      >
+                        {formatTicketDueDate(ticket.due_date)}
+                      </p>
+                      {overdue && (
+                        <p className="text-xs text-destructive font-semibold uppercase tracking-wide">
+                          Prazo vencido
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Separator />
@@ -216,24 +289,75 @@ const TicketDetails = () => {
                   Descrição Detalhada
                 </h3>
                 <div className="bg-muted/30 rounded-lg p-4">
-                  <p className="whitespace-pre-wrap leading-relaxed">{ticket.description}</p>
+                  <p className="whitespace-pre-wrap leading-relaxed">
+                    {ticket.description}
+                  </p>
                 </div>
               </div>
+
+              {ticket.attachment && (
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Imagem anexada
+                  </h3>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <a
+                      href={ticket.attachment}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block max-w-md"
+                    >
+                      <img
+                        src={ticket.attachment}
+                        alt={`Anexo do chamado ${ticket.title}`}
+                        className="w-full rounded-lg border object-cover max-h-64 hover:opacity-90 transition-opacity"
+                      />
+                    </a>
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      <p>
+                        Clique na miniatura para abrir em outra aba ou use o
+                        botão abaixo para baixar/visualizar em tamanho maior.
+                      </p>
+                      <Button
+                        asChild
+                        variant="secondary"
+                        className="w-fit gap-2"
+                      >
+                        <a
+                          href={ticket.attachment}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          Abrir imagem
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="bg-card border rounded-lg p-4">
                 <h4 className="font-medium mb-2">Histórico do Chamado</h4>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span>Criado: {formatTicketDate(ticket.created_at, true)}</span>
+                    <span>
+                      Criado: {formatTicketDate(ticket.created_at, true)}
+                    </span>
                   </div>
                 </div>
-                {ticket.status !== 'open' && (
+                {ticket.status !== "open" && (
                   <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        ticket.status === 'in_progress' ? 'bg-status-progress' : 'bg-status-completed'
-                      }`}></div>
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          ticket.status === "in_progress"
+                            ? "bg-status-progress"
+                            : "bg-status-completed"
+                        }`}
+                      ></div>
                       <span>Status atual: {statusConfig.label}</span>
                     </div>
                   </div>
@@ -244,14 +368,14 @@ const TicketDetails = () => {
 
           <div className="flex gap-4">
             <Button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate("/dashboard")}
               variant="outline"
               className="flex-1"
             >
               Voltar ao Dashboard
             </Button>
             <Button
-              onClick={() => navigate('/criar-chamado')}
+              onClick={() => navigate("/criar-chamado")}
               className="flex-1 bg-primary hover:bg-primary/90"
             >
               Criar Novo Chamado
