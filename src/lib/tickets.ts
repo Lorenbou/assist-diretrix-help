@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Ticket, CreateTicketData } from "@/types/ticket";
+import { CreateTicketData, Ticket } from "@/types/ticket";
 
 type TicketFilters = {
   status?: string;

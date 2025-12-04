@@ -1,10 +1,10 @@
 import {
   AlertCircle,
-  Clock,
-  CheckCircle,
   Bug,
-  HelpCircle,
+  CheckCircle,
+  Clock,
   Code2,
+  HelpCircle,
 } from "lucide-react";
 import { Ticket } from "@/types/ticket";
 

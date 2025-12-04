@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -13,22 +13,22 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ticketService } from "@/lib/tickets";
 import {
-  getStatusConfig,
-  getTypeConfig,
   formatTicketDate,
   formatTicketDueDate,
+  getStatusConfig,
+  getTypeConfig,
   isTicketOverdue,
 } from "@/lib/ticketUtils";
 import { Ticket } from "@/types/ticket";
 import { useToast } from "@/hooks/use-toast";
 import {
+  AlertTriangle,
   ArrowLeft,
   Calendar,
-  User,
-  Tag,
-  AlertTriangle,
   CalendarDays,
   Image as ImageIcon,
+  Tag,
+  User,
 } from "lucide-react";
 
 const TicketDetails = () => {
@@ -39,31 +39,32 @@ const TicketDetails = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (id) {
-      const loadTicket = async () => {
-        try {
-          const foundTicket = await ticketService.getTicketById(id);
-          if (foundTicket) {
-            setTicket(foundTicket);
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Chamado não encontrado",
-              description: "O chamado solicitado não existe ou foi removido",
-            });
-            navigate("/dashboard");
-          }
-        } catch (error) {
+    if (!id) return;
+
+    const loadTicket = async () => {
+      try {
+        const foundTicket = await ticketService.getTicketById(id);
+        if (foundTicket) {
+          setTicket(foundTicket);
+        } else {
           toast({
             variant: "destructive",
-            title: "Erro ao carregar chamado",
-            description: "Não foi possível carregar o chamado",
+            title: "Chamado não encontrado",
+            description: "O chamado solicitado não existe ou foi removido",
           });
           navigate("/dashboard");
         }
-      };
-      loadTicket();
-    }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar chamado",
+          description: "Não foi possível carregar o chamado",
+        });
+        navigate("/dashboard");
+      }
+    };
+
+    void loadTicket();
   }, [id, navigate, toast]);
 
   const handleStatusUpdate = async (newStatus: string) => {

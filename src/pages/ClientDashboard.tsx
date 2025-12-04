@@ -15,24 +15,24 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ticketService } from "@/lib/tickets";
 import {
-  getStatusConfig,
-  getTypeConfig,
   formatTicketDate,
   formatTicketDueDate,
+  getStatusConfig,
+  getTypeConfig,
   isTicketOverdue,
 } from "@/lib/ticketUtils";
 import { Ticket } from "@/types/ticket";
 import {
-  Plus,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Code2,
   LogOut,
   MessageSquare,
-  Clock,
-  CheckCircle2,
-  User,
-  Code2,
-  Search,
-  AlertCircle,
   Paperclip,
+  Plus,
+  Search,
+  User,
 } from "lucide-react";
 
 const ClientDashboard = () => {
@@ -348,7 +348,7 @@ const ClientDashboard = () => {
                           </span>
                           {ticket.due_date && (
                             <>
-                              <span>•</span>
+                              <span aria-hidden="true">•</span>
                               <span
                                 className={
                                   overdue
