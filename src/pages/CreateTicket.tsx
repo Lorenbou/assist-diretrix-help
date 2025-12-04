@@ -1,4 +1,4 @@
-import { useState, useEffect, ChangeEvent } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   Select,
@@ -20,12 +20,12 @@ import {
 } from "@/components/ui/select";
 import {
   ArrowLeft,
-  Send,
   Bug,
-  HelpCircle,
-  Code2,
-  Paperclip,
   CalendarDays,
+  Code2,
+  HelpCircle,
+  Paperclip,
+  Send,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";

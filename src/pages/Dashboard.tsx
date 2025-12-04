@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,21 +14,21 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { ticketService } from "@/lib/tickets";
 import {
-  getStatusConfig,
-  getTypeConfig,
   formatTicketDate,
   formatTicketDueDate,
+  getStatusConfig,
+  getTypeConfig,
   isTicketOverdue,
 } from "@/lib/ticketUtils";
 import { Ticket } from "@/types/ticket";
 import {
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  LogOut,
+  Paperclip,
   Plus,
   Search,
-  LogOut,
-  AlertCircle,
-  Clock,
-  CheckCircle,
-  Paperclip,
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -200,7 +200,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Em Andamento
+                    Em andamento
                   </p>
                   <p className="text-2xl font-bold text-status-progress">
                     {tickets.filter((t) => t.status === "in_progress").length}
@@ -293,7 +293,7 @@ const Dashboard = () => {
                               {ticket.created_by_user?.name || "Usuário"}
                             </span>
                           </span>
-                          <span>•</span>
+                          <span aria-hidden="true">•</span>
                           <span>{formatTicketDate(ticket.created_at)}</span>
                         </div>
                         {ticket.due_date && (
